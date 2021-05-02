@@ -98,6 +98,7 @@ int power_state_machine()
       }
       //line input detect
       line_input = (unsigned long)analogRead(A0); //чтение линейного входа
+      //раскомментировать чтобы видеть значения сигнала линейного входа
       //Serial.print("\nLine Input ="); Serial.print(line_input);
       if (line_input > SIGNAL_LEVEL_TO_OFF)
       {
@@ -121,6 +122,7 @@ void loop()
   TempM = (unsigned long)analogRead(A1) << 7; //чтение термодатчиков
   unsigned long AverM = TempS - (TempS >> 7) + (TempM >> 7); //экспотенциальный фильтр
   TempS = AverM;
+ // раскомменть чтобы видеть температурные значения
   //Serial.print("\ntemperature ="); Serial.print(TempS);
   if (TempS < OVERHEAT)
     overheat_flag = true;
