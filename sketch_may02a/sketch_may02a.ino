@@ -22,7 +22,8 @@
 #define POWER_SEMI 1
 #define POWER_ON  2
 #define CAPASITOR_CHARGE_TIME_MS 2000   // время зарядки (мс)
-  
+#define SIGNAL_LEVEL_TO_OFF 500 //сигнал при котором нет автоотключения 
+#define TIME_TO_OFF         40000  //time to off (ms)
 //------------------------------------------
 void bt_off();
 void bt_on();
@@ -45,6 +46,7 @@ void setup()
   pinMode(buttonON, INPUT);
   pinMode(buttonOFF, INPUT);
   pinMode(A1, INPUT);
+  pinMode(A0, INPUT);
   digitalWrite(A1, HIGH);//вкл подтягивающих резисторов
   digitalWrite(buttonON, HIGH); //вкл подтягивающих резисторов
   digitalWrite(buttonOFF, HIGH); //на обе кнопки
@@ -63,7 +65,9 @@ POWER_OFF, POWER_SEMI or POWER_ON
 int power_state_machine()
 {
   static unsigned long timePoint;
+  static unsigned long last_input_inpuls;
   static unsigned int state = POWER_OFF;
+  unsigned long line_input;
   switch(state)
   {
     case POWER_OFF:
@@ -71,9 +75,8 @@ int power_state_machine()
       {
         new_button_state = false;
         state =  POWER_SEMI;
-        Serial.print("\r\nSEMI");
+        Serial.print("\r\nSEMI POWER");
         timePoint = millis(); 
-        return (1);   
       }    
       break;
 
@@ -81,8 +84,8 @@ int power_state_machine()
       if (millis()-timePoint > CAPASITOR_CHARGE_TIME_MS)
       {
         state = POWER_ON;
-        Serial.print("\r\nPOWERON");
-        return (2);
+        last_input_inpuls = millis();
+        Serial.print("\r\nPOWER ON");
       }    
       break;
 
@@ -91,11 +94,25 @@ int power_state_machine()
       {    
         new_button_state = false; 
         state =  POWER_OFF;
-        Serial.print("\r\nPOWEROFF");
-        return(0);
-      } 
-      break;  
+        Serial.print("\r\nPOWER OFF");
+      }
+      //line input detect
+      line_input = (unsigned long)analogRead(A0); //чтение линейного входа
+      //Serial.print("\nLine Input ="); Serial.print(line_input);
+      if (line_input > SIGNAL_LEVEL_TO_OFF)
+      {
+        last_input_inpuls = millis();
+        Serial.print("\nPower Off timer restart");
+      }
+
+  if (millis() - last_input_inpuls > TIME_TO_OFF)
+  {
+    Serial.print("\nSLEEP mode inter");
+    state =POWER_OFF;
   } 
+      break;  
+  }     
+  return (state);
 }
 
 //------------------------------------------
@@ -104,7 +121,7 @@ void loop()
   TempM = (unsigned long)analogRead(A1) << 7; //чтение термодатчиков
   unsigned long AverM = TempS - (TempS >> 7) + (TempM >> 7); //экспотенциальный фильтр
   TempS = AverM;
-  Serial.print("\ntemperature ="); Serial.print(TempS);
+  //Serial.print("\ntemperature ="); Serial.print(TempS);
   if (TempS < OVERHEAT)
     overheat_flag = true;
   if (TempS > COOLSTATE)
