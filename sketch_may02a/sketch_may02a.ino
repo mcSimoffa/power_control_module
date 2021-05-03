@@ -1,9 +1,11 @@
 #include <TimerOne.h>
 #include <MsTimer2.h>
+#include <Button.h>
+
+
 //------------------------------------------
 //подключение входных выводов
 #define buttonON  3
-#define buttonOFF 2
 //подключенеи выходных выводов
 #define relay0      10
 #define relay1      9
@@ -11,9 +13,6 @@
 #define lampSemi    11
 #define lampFull    12
 #define overTempPin  7
-
-#define ISNT_PRESSED 0
-#define IS_PRESSED   1
 
 #define OVERHEAT    24000 //36.6 град
 #define COOLSTATE   29000 //23 град
@@ -25,10 +24,7 @@
 #define SIGNAL_LEVEL_TO_OFF 500 //сигнал при котором нет автоотключения 
 #define TIME_TO_OFF         600000  //time to off (ms)
 //------------------------------------------
-void bt_off();
-void bt_on();
-volatile bool new_button_state = false;
-volatile bool button_state = ISNT_PRESSED;
+Button btn(buttonON);
 volatile bool overheat_flag = false;
 volatile unsigned long TempM;
 volatile unsigned long TempS;
@@ -42,17 +38,10 @@ void setup()
   pinMode(lampFull, OUTPUT);
   pinMode(led0, OUTPUT);
   pinMode(overTempPin, OUTPUT);
-
-  pinMode(buttonON, INPUT);
-  pinMode(buttonOFF, INPUT);
+  btn.begin();
   pinMode(A1, INPUT);
   pinMode(A0, INPUT);
   digitalWrite(A1, HIGH);//вкл подтягивающих резисторов
-  digitalWrite(buttonON, HIGH); //вкл подтягивающих резисторов
-  digitalWrite(buttonOFF, HIGH); //на обе кнопки
-  
-  attachInterrupt(0, btn_off, FALLING);
-  attachInterrupt(1, btn_on, FALLING);
   
   MsTimer2::set(10, Timer10); //таймер 10 мсек
   MsTimer2::start();
@@ -69,12 +58,12 @@ int power_state_machine()
   static unsigned long last_input_inpuls;
   static unsigned int state = POWER_OFF;
   unsigned long line_input;
+  bool isButtonPressed = btn.pressed();
   switch(state)
   {
     case POWER_OFF:
-      if ((new_button_state) && (button_state == IS_PRESSED))
+      if (isButtonPressed)
       {
-        new_button_state = false;
         state =  POWER_SEMI;
         Serial.print("\r\nSEMI POWER");
         timePoint = millis(); 
@@ -91,9 +80,8 @@ int power_state_machine()
       break;
 
     case POWER_ON:
-      if ((new_button_state) && (button_state == IS_PRESSED))
+      if (isButtonPressed)
       {    
-        new_button_state = false; 
         state =  POWER_OFF;
         Serial.print("\r\nPOWER OFF");
       }
@@ -191,25 +179,5 @@ void Timer10()
         //digitalWrite(lampFull, 1);
       }
     }
-  }
-}
-//------------------------------------------
-void btn_off()
-{
-  if (button_state != ISNT_PRESSED)
-  {
-    button_state = ISNT_PRESSED;
-    new_button_state = true;
-    //Serial.print("button released\r\n");
-  }  
-}
-//------------------------------------------
-void btn_on()
-{
-  if (button_state != IS_PRESSED)
-  {
-    button_state = IS_PRESSED;
-    new_button_state = true;
-    //  bSerial.print("button pressed\r\n");
   }
 }
