@@ -15,7 +15,7 @@
 #define ISNT_PRESSED 0
 #define IS_PRESSED   1
 
-#define OVERHEAT    28000 //36.6 град
+#define OVERHEAT    24000 //36.6 град
 #define COOLSTATE   29000 //23 град
 
 #define POWER_OFF 0
@@ -23,7 +23,7 @@
 #define POWER_ON  2
 #define CAPASITOR_CHARGE_TIME_MS 2000   // время зарядки (мс)
 #define SIGNAL_LEVEL_TO_OFF 500 //сигнал при котором нет автоотключения 
-#define TIME_TO_OFF         40000  //time to off (ms)
+#define TIME_TO_OFF         600000  //time to off (ms)
 //------------------------------------------
 void bt_off();
 void bt_on();
@@ -57,6 +57,7 @@ void setup()
   MsTimer2::set(10, Timer10); //таймер 10 мсек
   MsTimer2::start();
   Serial.begin(115200);
+  Serial.print("\r\nDevice started !\r\n");
 }
 //------------------------------------------------
 /* it return:
@@ -122,7 +123,7 @@ void loop()
   TempM = (unsigned long)analogRead(A1) << 7; //чтение термодатчиков
   unsigned long AverM = TempS - (TempS >> 7) + (TempM >> 7); //экспотенциальный фильтр
   TempS = AverM;
- // раскомменть чтобы видеть температурные значения
+// раскомменть чтобы видеть температурные значения
   //Serial.print("\ntemperature ="); Serial.print(TempS);
   if (TempS < OVERHEAT)
     overheat_flag = true;
@@ -209,6 +210,6 @@ void btn_on()
   {
     button_state = IS_PRESSED;
     new_button_state = true;
-    //Serial.print("button pressed\r\n");
+    //  bSerial.print("button pressed\r\n");
   }
 }
